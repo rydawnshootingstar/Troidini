@@ -12,7 +12,7 @@ const domain = (sequelize, DataTypes) => {
 	});
 
 	Domain.associate = (models) => {
-		Domain.belongsTo(models.Project);
+		//Domain.belongsTo(models.Project);
 		Domain.hasMany(models.Bug);
 		Domain.hasMany(models.Initiative);
 	};

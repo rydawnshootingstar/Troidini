@@ -19,8 +19,8 @@ const organization = (sequelize, DataTypes) => {
 	});
 
 	Organization.associate = (models) => {
-		Organization.hasOne(models.User, { as: 'Owner' });
-		Organization.hasMany(models.User, { onDelete: 'CASCADE' });
+		//Organization.belongsTo();
+		Organization.hasMany(models.User, { as: 'users', foreignKey: 'OrganizationId', onDelete: 'CASCADE' });
 		Organization.hasMany(models.Project, { onDelete: 'CASCADE' });
 	};
 

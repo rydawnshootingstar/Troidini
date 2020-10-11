@@ -37,9 +37,9 @@ const bug = (sequelize, DataTypes) => {
 	});
 
 	Bug.associate = (models) => {
-		Bug.belongsToOne(models.Domain);
-		Bug.belongsToMany(models.Initiative, { through: Initiatives_With_Bugs });
-		Bug.belongsTo(model.User, { as: 'Creator' });
+		Bug.belongsTo(models.Domain);
+		Bug.belongsToMany(models.Initiative, { through: 'Initiatives_With_Bugs' });
+		//Bug.belongsTo(models.User, { as: 'Creator' });
 	};
 	return Bug;
 };
