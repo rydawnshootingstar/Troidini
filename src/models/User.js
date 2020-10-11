@@ -36,9 +36,9 @@ const user = (sequelize, DataTypes) => {
 	});
 
 	User.associate = (models) => {
-		//User.belongsTo(models.Organization);
 		User.hasMany(models.Comment, { onDelete: 'CASCADE' });
 		User.hasMany(models.Bug);
+		User.belongsTo(models.Organization, { as: 'organization', foreignKey: 'OrganizationId' });
 	};
 
 	return User;
