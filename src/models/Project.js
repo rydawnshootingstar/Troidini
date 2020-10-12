@@ -13,8 +13,8 @@ const project = (sequelize, DataTypes) => {
 	});
 
 	Project.associate = (models) => {
-		Project.hasMany(models.Domain, { onDelete: 'CASCADE' });
-		//Project.belongsTo(models.Organization);
+		Project.hasMany(models.Domain, { onDelete: 'CASCADE', foreignKey: 'project_id' });
+		//Project.belongsTo(models.Organization, { foreignKey: 'organization_id' });
 	};
 	return Project;
 };

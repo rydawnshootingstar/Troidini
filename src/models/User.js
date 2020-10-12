@@ -36,9 +36,9 @@ const user = (sequelize, DataTypes) => {
 	});
 
 	User.associate = (models) => {
-		User.hasMany(models.Comment, { onDelete: 'CASCADE' });
-		User.hasMany(models.Bug);
-		User.belongsTo(models.Organization, { as: 'organization', foreignKey: 'OrganizationId' });
+		User.hasMany(models.Comment, { as: 'Author', onDelete: 'CASCADE', foreignKey: 'user_id' });
+		User.hasMany(models.Bug, { as: 'Creator', foreignKey: 'user_id' });
+		User.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
 	};
 
 	return User;

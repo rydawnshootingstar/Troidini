@@ -37,9 +37,9 @@ const bug = (sequelize, DataTypes) => {
 	});
 
 	Bug.associate = (models) => {
-		Bug.belongsTo(models.Domain);
+		//Bug.belongsTo(models.Domain, { foreignKey: 'domain_id' });
 		Bug.belongsToMany(models.Initiative, { through: 'Initiatives_With_Bugs' });
-		//Bug.belongsTo(models.User, { as: 'Creator' });
+		//Bug.belongsTo(models.User, { as: 'Creator', foreignKey: 'user_id' });
 	};
 	return Bug;
 };

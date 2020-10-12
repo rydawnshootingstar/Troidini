@@ -12,9 +12,9 @@ const domain = (sequelize, DataTypes) => {
 	});
 
 	Domain.associate = (models) => {
-		//Domain.belongsTo(models.Project);
-		Domain.hasMany(models.Bug);
-		Domain.hasMany(models.Initiative);
+		//Domain.belongsTo(models.Project, { foreignKey: 'project_id' });
+		Domain.hasMany(models.Bug, { onDelete: 'CASCADE', foreignKey: 'domain_id' });
+		Domain.hasMany(models.Initiative, { onDelete: 'CASCADE', foreignKey: 'domain_id' });
 	};
 	return Domain;
 };
