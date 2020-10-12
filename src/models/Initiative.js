@@ -19,8 +19,8 @@ const initiative = (sequelize, DataTypes) => {
 	});
 
 	Initiative.associate = (models) => {
-		Initiative.belongsTo(models.User, { as: 'Creator', foreignKey: 'user_id' });
-		Initiative.hasMany(models.Bug, { foreignKey: 'initiative_id' });
+		Initiative.belongsTo(models.User, { as: 'Creator', foreignKey: { name: 'user_id', allowNull: false } });
+		Initiative.hasMany(models.Bug, { foreignKey: { name: 'initiative_id', allowNull: false } });
 	};
 	return Initiative;
 };

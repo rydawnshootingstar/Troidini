@@ -13,8 +13,8 @@ const comment = (sequelize, DataTypes) => {
 	});
 
 	Comment.associate = (models) => {
-		Comment.belongsTo(models.User, { as: 'Author', foreignKey: 'user_id' });
-		Comment.belongsTo(models.Bug, { foreignKey: 'bug_id' });
+		Comment.belongsTo(models.User, { as: 'Author', foreignKey: { name: 'user_id', allowNull: false } });
+		Comment.belongsTo(models.Bug, { foreignKey: { name: 'bug_id', allowNull: false } });
 	};
 	return Comment;
 };

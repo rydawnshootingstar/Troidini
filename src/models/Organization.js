@@ -6,6 +6,10 @@ const organization = (sequelize, DataTypes) => {
 			allowNull: false,
 			primaryKey: true,
 		},
+		name: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
 		logo_url: {
 			type: DataTypes.STRING,
 		},
@@ -20,8 +24,15 @@ const organization = (sequelize, DataTypes) => {
 
 	Organization.associate = (models) => {
 		//Organization.belongsTo(models.User, { as: 'creator', foreignKey: 'creator_id' });
-		Organization.hasMany(models.User, { as: 'users', foreignKey: 'organization_id', onDelete: 'CASCADE' });
-		Organization.hasMany(models.Project, { onDelete: 'CASCADE', foreignKey: 'organization_id' });
+		Organization.hasMany(models.User, {
+			as: 'users',
+			foreignKey: { name: 'organization_id', allowNull: false },
+			onDelete: 'CASCADE',
+		});
+		Organization.hasMany(models.Project, {
+			onDelete: 'CASCADE',
+			foreignKey: { name: 'organization_id', allowNull: false },
+		});
 	};
 
 	return Organization;

@@ -30,15 +30,22 @@ const user = (sequelize, DataTypes) => {
 			defaultValue: true,
 		},
 		type: {
-			type: DataTypes.ENUM('Admin, Developer, Support'),
+			type: DataTypes.ENUM(['Admin', 'Developer', 'Support']),
 			allowNull: false,
 		},
 	});
 
 	User.associate = (models) => {
-		User.hasMany(models.Comment, { as: 'Author', onDelete: 'CASCADE', foreignKey: 'user_id' });
-		User.hasMany(models.Bug, { as: 'Creator', foreignKey: 'user_id' });
-		User.belongsTo(models.Organization, { as: 'organization', foreignKey: 'organization_id' });
+		User.hasMany(models.Comment, {
+			as: 'Author',
+			onDelete: 'CASCADE',
+			foreignKey: { name: 'user_id', allowNull: false },
+		});
+		User.hasMany(models.Bug, { as: 'Creator', foreignKey: { name: 'user_id', allowNull: false } });
+		User.belongsTo(models.Organization, {
+			as: 'organization',
+			foreignKey: { name: 'organization_id', allowNull: false },
+		});
 	};
 
 	return User;
