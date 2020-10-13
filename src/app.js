@@ -55,17 +55,15 @@ app.post('/initiatives/create', async (req, res) => {
 });
 
 app.get('/organization/:id', async (req, res) => {
-	const targetOrganization = await db.Organization.findAll({
-		where: {
-			id: req.params.id,
-		},
-	});
+	const targetOrganization = await db.Organization.findByPk(req.params.id);
+	const users = await targetOrganization.getUsers();
+	const projects = await targetOrganization.getProjects();
 
-	res.send(targetOrganization);
+	res.send({ targetOrganization, users, projects });
 });
 
 app.listen(process.env.PORT || 4000, () => {
 	console.log(`server is started on ${process.env.PORT || '4000'}`);
-	resetDB(db);
+	//resetDB(db);
 	//authDB(db);
 });
