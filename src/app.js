@@ -19,48 +19,80 @@ const authDB = async (db) => {
 };
 
 app.post('/organizations/create', async (req, res) => {
-	const newOrganization = await db.Organization.create(req.body);
-	res.send(newOrganization);
+	try {
+		const newOrganization = await db.Organization.create(req.body);
+		res.send(newOrganization);
+	} catch (err) {
+		res.send(err);
+	}
 });
 
 app.post('/users/create', async (req, res) => {
-	console.log(req.body);
-	const newUser = await db.User.create(req.body);
-	res.send(newUser);
+	try {
+		req.body.password = await bcrypt.hash(req.body.password, 10);
+		const newUser = await db.User.create(req.body);
+		res.send(newUser);
+	} catch (err) {
+		res.send(` There was a problem creating this user: ${err.errors[0].message}`);
+	}
 });
 
 app.post('/projects/create', async (req, res) => {
-	const newProject = await db.Project.create(req.body);
-	res.send(newProject);
+	try {
+		const newProject = await db.Project.create(req.body);
+		res.send(newProject);
+	} catch (err) {
+		res.send(err);
+	}
 });
 
 app.post('/domains/create', async (req, res) => {
-	const newDomain = await db.Domain.create(req.body);
-	res.send(newDomain);
+	try {
+		const newDomain = await db.Domain.create(req.body);
+		res.send(newDomain);
+	} catch (err) {
+		res.send(err);
+	}
 });
 
 app.post('/bugs/create', async (req, res) => {
-	const newBug = await db.Bug.create(req.body);
-	res.send(newBug);
+	try {
+		const newBug = await db.Bug.create(req.body);
+		res.send(newBug);
+	} catch (err) {
+		res.send(err);
+	}
 });
 
 app.post('/comments/create', async (req, res) => {
-	const newComment = await db.Comment.create(req.body);
-	res.send(newComment);
+	try {
+		const newComment = await db.Comment.create(req.body);
+		res.send(newComment);
+	} catch (err) {
+		res.send(err);
+	}
 });
 
 app.post('/initiatives/create', async (req, res) => {
-	const newInitiative = await db.Initiative.create(req.body);
-	res.send(newInitiative);
+	try {
+		const newInitiative = await db.Initiative.create(req.body);
+		res.send(newInitiative);
+	} catch (err) {
+		res.send(err);
+	}
 });
 
 app.get('/organization/:id', async (req, res) => {
-	const targetOrganization = await db.Organization.findByPk(req.params.id);
-	const users = await targetOrganization.getUsers();
-	const projects = await targetOrganization.getProjects();
-	const domains = await projects[0].getDomains();
+	try {
+		const targetOrganization = await db.Organization.findByPk(req.params.id);
+		const users = await targetOrganization.getUsers();
+		const projects = await targetOrganization.getProjects();
+		const domains = await projects[0].getDomains();
 
-	res.send({ targetOrganization, users, projects, domains });
+		res.send({ targetOrganization, users, projects, domains });
+	} catch (err) {
+		res.send(err);
+	}
 });
 
 app.listen(process.env.PORT || 4000, () => {
