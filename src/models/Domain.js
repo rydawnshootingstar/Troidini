@@ -6,6 +6,10 @@ const domain = (sequelize, DataTypes) => {
 			allowNull: false,
 			primaryKey: true,
 		},
+		name: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
 		repository_url: {
 			type: DataTypes.STRING,
 		},

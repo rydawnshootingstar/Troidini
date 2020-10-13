@@ -6,6 +6,10 @@ const user = (sequelize, DataTypes) => {
 			allowNull: false,
 			primaryKey: true,
 		},
+		avatar_url: {
+			type: DataTypes.STRING,
+			defaultValue: 'https://upload.wikimedia.org/wikipedia/commons/a/aa/Pachliopta_hector.jpg',
+		},
 		username: {
 			type: DataTypes.STRING,
 			allowNull: false,

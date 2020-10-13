@@ -58,8 +58,9 @@ app.get('/organization/:id', async (req, res) => {
 	const targetOrganization = await db.Organization.findByPk(req.params.id);
 	const users = await targetOrganization.getUsers();
 	const projects = await targetOrganization.getProjects();
+	const domains = await projects[0].getDomains();
 
-	res.send({ targetOrganization, users, projects });
+	res.send({ targetOrganization, users, projects, domains });
 });
 
 app.listen(process.env.PORT || 4000, () => {
