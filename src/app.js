@@ -1,16 +1,75 @@
 import express from 'express';
 import db from './models/index';
-import project from './models/Project';
 import bcrypt from 'bcrypt';
+import initializePassport from './passport-config';
+import passport from 'passport';
+import flash from 'express-flash';
+import session from 'express-session';
 
 const app = express();
 app.use(express.json());
+
+initializePassport(passport, db);
+app.use(
+	session({
+		secret: process.env.SECRET_KEY,
+		resave: false,
+		saveUninitialized: false,
+	})
+);
+
+// TODO: Probably going to be removing this
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
 
 // drops and recreates all tables
 const resetDB = async (db) => {
 	const result = await db.sequelize.sync({ force: true });
 	console.log(result);
 };
+
+app.get('/', (req, res) => {
+	console.log(req.user);
+	res.send('you did it!');
+});
+
+app.get('/login', (req, res) => {
+	res.send('you on da login screen');
+});
+
+app.post('/logout', async (req, res) => {
+	if (req.user) {
+		req.user.online_status = false;
+		await req.user.save();
+		req.logOut();
+		return res.redirect('/');
+
+		// TODO: socket.io event to social window component >
+		// social window component calls a redux action >
+		// redux state causes rerender
+	} else {
+		// TODO: protect this route so anything that doesn't have a logged in req.user is ignored
+		return res.send('not logged in');
+	}
+});
+
+app.get('/error', (req, res) => {
+	res.send('error');
+});
+
+// TODO: Not sure if we'll be using server side redirects. Check the interaction with react router later
+app.post(
+	'/login',
+	passport.authenticate('local', {
+		//successRedirect: '/',
+		//failureRedirect: '/login',
+		//failureFlash: true,
+	}),
+	(req, res, next) => {
+		res.send(req.user);
+	}
+);
 
 // tests connection to db
 const authDB = async (db) => {
@@ -28,6 +87,7 @@ app.post('/organizations/create', async (req, res) => {
 });
 
 app.post('/users/create', async (req, res) => {
+	console.log(req.body);
 	try {
 		req.body.password = await bcrypt.hash(req.body.password, 10);
 		const newUser = await db.User.create(req.body);
