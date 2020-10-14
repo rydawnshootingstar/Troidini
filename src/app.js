@@ -196,9 +196,9 @@ app.patch('/bugs/update/:id', async (req, res) => {
 			bug[key] = value;
 		}
 		await bug.save();
-		res.send(apiResponse(true, 'Domain successfully updated'));
+		res.send(apiResponse(true, 'Bug successfully updated'));
 	} catch (err) {
-		res.send(apiResponse(false, 'Could not update this domain', err.message));
+		res.send(apiResponse(false, 'Could not update this bug', err.message));
 	}
 });
 
@@ -220,14 +220,56 @@ app.post('/initiatives/create', async (req, res) => {
 	}
 });
 
+app.patch('/initiatives/update/:id', async (req, res) => {
+	try {
+		const initiative = await db.Initiative.findByPk(req.params.id);
+		for (const [key, value] of Object.entries(req.body.changes)) {
+			initiative[key] = value;
+		}
+		await initiative.save();
+		res.send(apiResponse(true, 'Initiative successfully updated'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not update this initiative', err.message));
+	}
+});
+
+app.patch('/initiatives/addbugs/:id', async (req, res) => {
+	try {
+		const initiative = await db.Initiative.findByPk(req.params.id);
+
+		req.body.bugs.forEach(async (bugId) => {
+			await initiative.addBugs(bugId);
+		});
+
+		res.send(apiResponse(true, 'Bugs successfully added to Initiative'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not add bugs to this initiative', err.message));
+	}
+});
+
+app.patch('/initiatives/removebugs/:id', async (req, res) => {
+	try {
+		const initiative = await db.Initiative.findByPk(req.params.id);
+
+		req.body.bugs.forEach(async (bugId) => {
+			await initiative.removeBugs(bugId);
+		});
+
+		res.send(apiResponse(true, 'Bugs successfully removed from Initiative'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not remove bugs from this initiative', err.message));
+	}
+});
+
 app.get('/organization/:id', async (req, res) => {
 	try {
 		const targetOrganization = await db.Organization.findByPk(req.params.id);
 		const users = await targetOrganization.getUsers();
 		const projects = await targetOrganization.getProjects();
 		const domains = await projects[0].getDomains();
+		const initiatives = await domains[0].getInitiatives();
 
-		res.send({ targetOrganization, users, projects, domains });
+		res.send({ targetOrganization, users, projects, domains, initiatives });
 	} catch (err) {
 		res.send(err);
 	}
