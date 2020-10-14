@@ -18,6 +18,14 @@ app.use(
 	})
 );
 
+const apiResponse = (success, message, error = null) => {
+	return {
+		success,
+		message,
+		error,
+	};
+};
+
 // TODO: Probably going to be removing this
 app.use(flash());
 app.use(passport.initialize());
@@ -86,6 +94,21 @@ app.post('/organizations/create', async (req, res) => {
 	}
 });
 
+// updates expect a body of { changes : { "key": "value" } }
+
+app.patch('/organizations/update/:id', async (req, res) => {
+	try {
+		const organization = await db.Organization.findByPk(req.params.id);
+		for (const [key, value] of Object.entries(req.body.changes)) {
+			organization[key] = value;
+		}
+		await organization.save();
+		res.send(apiResponse(true, 'Organization successfully updated'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not update this organization', err.message));
+	}
+});
+
 app.post('/users/create', async (req, res) => {
 	console.log(req.body);
 	try {
@@ -94,6 +117,22 @@ app.post('/users/create', async (req, res) => {
 		res.send(newUser);
 	} catch (err) {
 		res.send(` There was a problem creating this user: ${err.errors[0].message}`);
+	}
+});
+
+// TODO: sequelize will not allow you to modify the id (pk) of an instance, but it will allow you to change a foreign key.
+// either mitigate this by picking off specific values you want to be able to change, or find another way to make them
+
+app.patch('/users/update/:id', async (req, res) => {
+	try {
+		const user = await db.User.findByPk(req.params.id);
+		for (const [key, value] of Object.entries(req.body.changes)) {
+			user[key] = value;
+		}
+		await user.save();
+		res.send(apiResponse(true, 'User successfully updated'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not update this user', err.message));
 	}
 });
 
@@ -106,6 +145,19 @@ app.post('/projects/create', async (req, res) => {
 	}
 });
 
+app.patch('/projects/update/:id', async (req, res) => {
+	try {
+		const project = await db.Project.findByPk(req.params.id);
+		for (const [key, value] of Object.entries(req.body.changes)) {
+			project[key] = value;
+		}
+		await project.save();
+		res.send(apiResponse(true, 'Project successfully updated'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not update this project', err.message));
+	}
+});
+
 app.post('/domains/create', async (req, res) => {
 	try {
 		const newDomain = await db.Domain.create(req.body);
@@ -115,12 +167,38 @@ app.post('/domains/create', async (req, res) => {
 	}
 });
 
+app.patch('/domains/update/:id', async (req, res) => {
+	try {
+		const domain = await db.Domain.findByPk(req.params.id);
+		for (const [key, value] of Object.entries(req.body.changes)) {
+			domain[key] = value;
+		}
+		await domain.save();
+		res.send(apiResponse(true, 'Domain successfully updated'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not update this domain', err.message));
+	}
+});
+
 app.post('/bugs/create', async (req, res) => {
 	try {
 		const newBug = await db.Bug.create(req.body);
 		res.send(newBug);
 	} catch (err) {
 		res.send(err);
+	}
+});
+
+app.patch('/bugs/update/:id', async (req, res) => {
+	try {
+		const bug = await db.Bug.findByPk(req.params.id);
+		for (const [key, value] of Object.entries(req.body.changes)) {
+			bug[key] = value;
+		}
+		await bug.save();
+		res.send(apiResponse(true, 'Domain successfully updated'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not update this domain', err.message));
 	}
 });
 

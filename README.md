@@ -24,4 +24,8 @@ For a larger scale project, I'd look to cloud hosting like RDS on AWS.
 
 Socket.io is sufficient for handling up to about 1400 concurrent connections, so that's plenty.
 
+ORGANIZTION level sockets: user status change, user online state change, project, domain, initiative, bug creations
+
+BUG level sockets: comments, status changes,
+
 For a larger scale project, I'd learn something like Redis pub/sub.
