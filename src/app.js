@@ -1,4 +1,6 @@
 import express from 'express';
+import http from 'http';
+import socketIO from 'socket.io';
 import db from './models/index';
 import bcrypt from 'bcrypt';
 import initializePassport from './passport-config';
@@ -11,6 +13,9 @@ import session from 'express-session';
 */
 const app = express();
 app.use(express.json());
+
+const server = http.createServer(app);
+const io = socketIO(server);
 
 initializePassport(passport, db);
 app.use(
@@ -160,6 +165,19 @@ app.patch('/users/update/:id', async (req, res) => {
 	}
 });
 
+app.delete('/users/delete/:id', async (req, res) => {
+	try {
+		await db.User.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.send(apiResponse(true, 'User successfully deleted'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not delete this user', err.message));
+	}
+});
+
 app.post('/projects/create', async (req, res) => {
 	try {
 		const newProject = await db.Project.create(req.body);
@@ -179,6 +197,19 @@ app.patch('/projects/update/:id', async (req, res) => {
 		res.send(apiResponse(true, 'Project successfully updated'));
 	} catch (err) {
 		res.send(apiResponse(false, 'Could not update this project', err.message));
+	}
+});
+
+app.delete('/projects/delete/:id', async (req, res) => {
+	try {
+		await db.Project.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.send(apiResponse(true, 'Project successfully deleted'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not delete this project', err.message));
 	}
 });
 
@@ -204,6 +235,19 @@ app.patch('/domains/update/:id', async (req, res) => {
 	}
 });
 
+app.delete('/domains/delete/:id', async (req, res) => {
+	try {
+		await db.Domain.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.send(apiResponse(true, 'Domain successfully deleted'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not delete this domain', err.message));
+	}
+});
+
 app.post('/bugs/create', async (req, res) => {
 	try {
 		const newBug = await db.Bug.create(req.body);
@@ -226,6 +270,19 @@ app.patch('/bugs/update/:id', async (req, res) => {
 	}
 });
 
+app.delete('/bugs/delete/:id', async (req, res) => {
+	try {
+		await db.Bug.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.send(apiResponse(true, 'Bug successfully deleted'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not delete this bug', err.message));
+	}
+});
+
 app.post('/comments/create', async (req, res) => {
 	try {
 		const newComment = await db.Comment.create(req.body);
@@ -245,6 +302,19 @@ app.patch('/comments/update/:id', async (req, res) => {
 		res.send(apiResponse(true, 'Comment successfully updated'));
 	} catch (err) {
 		res.send(apiResponse(false, 'Could not update this comment', err.message));
+	}
+});
+
+app.delete('/comments/delete/:id', async (req, res) => {
+	try {
+		await db.Comment.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.send(apiResponse(true, 'Comment successfully deleted'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not delete this comment', err.message));
 	}
 });
 
@@ -298,6 +368,19 @@ app.patch('/initiatives/removebugs/:id', async (req, res) => {
 	}
 });
 
+app.delete('/initiatives/delete/:id', async (req, res) => {
+	try {
+		await db.Initiative.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.send(apiResponse(true, 'Initiative successfully deleted'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not delete this initiative', err.message));
+	}
+});
+
 app.get('/organization/:id', async (req, res) => {
 	try {
 		const targetOrganization = await db.Organization.findByPk(req.params.id);
@@ -316,7 +399,7 @@ app.get('/organization/:id', async (req, res) => {
 	-----------------START SERVER-----------------
 */
 
-app.listen(process.env.PORT || 4000, () => {
+server.listen(process.env.PORT || 4000, () => {
 	console.log(`server is started on ${process.env.PORT || '4000'}`);
 	//resetDB(db);
 	//authDB(db);
