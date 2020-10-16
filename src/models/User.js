@@ -37,6 +37,14 @@ const user = (sequelize, DataTypes) => {
 			type: DataTypes.ENUM(['Admin', 'Developer', 'Support']),
 			allowNull: false,
 		},
+		settings: {
+			type: DataTypes.JSONB,
+			allowNull: false,
+			defaultValue: {
+				Theme: 'default',
+				Social: 'default',
+			},
+		},
 	});
 
 	User.associate = (models) => {

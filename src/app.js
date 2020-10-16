@@ -6,6 +6,9 @@ import passport from 'passport';
 import flash from 'express-flash';
 import session from 'express-session';
 
+/*
+	-----------------INIT SERVER-----------------
+*/
 const app = express();
 app.use(express.json());
 
@@ -18,6 +21,27 @@ app.use(
 	})
 );
 
+// TODO: Probably going to be removing flash
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+
+/* 
+	-----------------DEV DB UTILS-----------------
+*/
+const resetDB = async (db) => {
+	const result = await db.sequelize.sync({ force: true });
+	console.log(result);
+};
+
+const authDB = async (db) => {
+	const auth = await db.sequelize.authenticate();
+	console.log('database connected');
+};
+
+/*
+	-----------------API UTILS-----------------	
+*/
 const apiResponse = (success, message, error = null) => {
 	return {
 		success,
@@ -26,16 +50,9 @@ const apiResponse = (success, message, error = null) => {
 	};
 };
 
-// TODO: Probably going to be removing this
-app.use(flash());
-app.use(passport.initialize());
-app.use(passport.session());
-
-// drops and recreates all tables
-const resetDB = async (db) => {
-	const result = await db.sequelize.sync({ force: true });
-	console.log(result);
-};
+/*
+	-----------------ROUTES-----------------
+*/
 
 app.get('/', (req, res) => {
 	console.log(req.user);
@@ -79,12 +96,6 @@ app.post(
 	}
 );
 
-// tests connection to db
-const authDB = async (db) => {
-	const auth = await db.sequelize.authenticate();
-	console.log('database connected');
-};
-
 app.post('/organizations/create', async (req, res) => {
 	try {
 		const newOrganization = await db.Organization.create(req.body);
@@ -106,6 +117,19 @@ app.patch('/organizations/update/:id', async (req, res) => {
 		res.send(apiResponse(true, 'Organization successfully updated'));
 	} catch (err) {
 		res.send(apiResponse(false, 'Could not update this organization', err.message));
+	}
+});
+
+app.delete('/organizations/delete/:id', async (req, res) => {
+	try {
+		await db.Organization.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.send(apiResponse(true, 'Organization successfully deleted'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not delete this organization', err.message));
 	}
 });
 
@@ -211,6 +235,19 @@ app.post('/comments/create', async (req, res) => {
 	}
 });
 
+app.patch('/comments/update/:id', async (req, res) => {
+	try {
+		const comment = await db.Comment.findByPk(req.params.id);
+		for (const [key, value] of Object.entries(req.body.changes)) {
+			comment[key] = value;
+		}
+		await comment.save();
+		res.send(apiResponse(true, 'Comment successfully updated'));
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not update this comment', err.message));
+	}
+});
+
 app.post('/initiatives/create', async (req, res) => {
 	try {
 		const newInitiative = await db.Initiative.create(req.body);
@@ -274,6 +311,10 @@ app.get('/organization/:id', async (req, res) => {
 		res.send(err);
 	}
 });
+
+/*
+	-----------------START SERVER-----------------
+*/
 
 app.listen(process.env.PORT || 4000, () => {
 	console.log(`server is started on ${process.env.PORT || '4000'}`);

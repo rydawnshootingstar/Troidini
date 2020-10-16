@@ -10,6 +10,11 @@ const initiative = (sequelize, DataTypes) => {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
+		status: {
+			type: DataTypes.ENUM(['New', 'In Progress', 'Complete']),
+			allowNull: false,
+			defaultValue: 'New',
+		},
 		purpose: {
 			type: DataTypes.STRING,
 		},

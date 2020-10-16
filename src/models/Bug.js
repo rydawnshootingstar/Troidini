@@ -30,9 +30,9 @@ const bug = (sequelize, DataTypes) => {
 			type: DataTypes.JSONB,
 		},
 		status: {
-			type: DataTypes.STRING,
+			type: DataTypes.ENUM(['New', 'In Progress', 'Complete']),
 			allowNull: false,
-			defaultValue: 'new',
+			defaultValue: 'New',
 		},
 	});
 
