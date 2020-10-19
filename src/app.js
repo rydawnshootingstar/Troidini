@@ -30,6 +30,11 @@ app.use(
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
+app.use((req, res, next) => {
+	res.header('Access-Control-Allow-Origin', 'http://localhost:8080'); // update to match the domain you will make the request from
+	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+	next();
+});
 
 /* 
 	-----------------DEV DB UTILS-----------------
@@ -55,12 +60,28 @@ const apiResponse = (success, message, error = null) => {
 	};
 };
 
+const checkAuthenticated = (req, res, next) => {
+	if (req.isAuthenticated()) {
+		return next();
+	}
+
+	res.send('not logged in');
+};
+
+const checkNotAuthenticated = (req, res, next) => {
+	if (!req.isAuthenticated()) {
+		return next();
+	}
+
+	res.redirect('/');
+};
+
 /*
 	-----------------ROUTES-----------------
 */
 
-app.get('/', (req, res) => {
-	console.log(req.user);
+app.get('/', checkAuthenticated, (req, res) => {
+	// console.log(req.user);
 	res.send('you did it!');
 });
 
@@ -79,7 +100,6 @@ app.post('/logout', async (req, res) => {
 		// social window component calls a redux action >
 		// redux state causes rerender
 	} else {
-		// TODO: protect this route so anything that doesn't have a logged in req.user is ignored
 		return res.send('not logged in');
 	}
 });
@@ -97,11 +117,22 @@ app.post(
 		//failureFlash: true,
 	}),
 	(req, res, next) => {
-		res.send(req.user);
+		const {
+			id,
+			avatar_url,
+			username,
+			email,
+			active,
+			online_status,
+			type,
+			settings,
+			organization_id,
+		} = req.user.dataValues;
+		res.send({ id, avatar_url, username, email, active, online_status, type, settings, organization_id });
 	}
 );
 
-app.post('/organizations/create', async (req, res) => {
+app.post('/organizations/create', checkAuthenticated, async (req, res) => {
 	try {
 		const newOrganization = await db.Organization.create(req.body);
 		res.send(newOrganization);
@@ -112,7 +143,7 @@ app.post('/organizations/create', async (req, res) => {
 
 // updates expect a body of { changes : { "key": "value" } }
 
-app.patch('/organizations/update/:id', async (req, res) => {
+app.patch('/organizations/update/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const organization = await db.Organization.findByPk(req.params.id);
 		for (const [key, value] of Object.entries(req.body.changes)) {
@@ -125,7 +156,7 @@ app.patch('/organizations/update/:id', async (req, res) => {
 	}
 });
 
-app.delete('/organizations/delete/:id', async (req, res) => {
+app.delete('/organizations/delete/:id', checkAuthenticated, async (req, res) => {
 	try {
 		await db.Organization.destroy({
 			where: {
@@ -138,7 +169,7 @@ app.delete('/organizations/delete/:id', async (req, res) => {
 	}
 });
 
-app.post('/users/create', async (req, res) => {
+app.post('/users/create', checkAuthenticated, async (req, res) => {
 	console.log(req.body);
 	try {
 		req.body.password = await bcrypt.hash(req.body.password, 10);
@@ -152,7 +183,7 @@ app.post('/users/create', async (req, res) => {
 // TODO: sequelize will not allow you to modify the id (pk) of an instance, but it will allow you to change a foreign key.
 // either mitigate this by picking off specific values you want to be able to change, or find another way to make them
 
-app.patch('/users/update/:id', async (req, res) => {
+app.patch('/users/update/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const user = await db.User.findByPk(req.params.id);
 		for (const [key, value] of Object.entries(req.body.changes)) {
@@ -165,7 +196,7 @@ app.patch('/users/update/:id', async (req, res) => {
 	}
 });
 
-app.delete('/users/delete/:id', async (req, res) => {
+app.delete('/users/delete/:id', checkAuthenticated, async (req, res) => {
 	try {
 		await db.User.destroy({
 			where: {
@@ -178,7 +209,7 @@ app.delete('/users/delete/:id', async (req, res) => {
 	}
 });
 
-app.post('/projects/create', async (req, res) => {
+app.post('/projects/create', checkAuthenticated, async (req, res) => {
 	try {
 		const newProject = await db.Project.create(req.body);
 		res.send(newProject);
@@ -187,7 +218,7 @@ app.post('/projects/create', async (req, res) => {
 	}
 });
 
-app.patch('/projects/update/:id', async (req, res) => {
+app.patch('/projects/update/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const project = await db.Project.findByPk(req.params.id);
 		for (const [key, value] of Object.entries(req.body.changes)) {
@@ -200,7 +231,7 @@ app.patch('/projects/update/:id', async (req, res) => {
 	}
 });
 
-app.delete('/projects/delete/:id', async (req, res) => {
+app.delete('/projects/delete/:id', checkAuthenticated, async (req, res) => {
 	try {
 		await db.Project.destroy({
 			where: {
@@ -213,7 +244,7 @@ app.delete('/projects/delete/:id', async (req, res) => {
 	}
 });
 
-app.post('/domains/create', async (req, res) => {
+app.post('/domains/create', checkAuthenticated, async (req, res) => {
 	try {
 		const newDomain = await db.Domain.create(req.body);
 		res.send(newDomain);
@@ -222,7 +253,7 @@ app.post('/domains/create', async (req, res) => {
 	}
 });
 
-app.patch('/domains/update/:id', async (req, res) => {
+app.patch('/domains/update/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const domain = await db.Domain.findByPk(req.params.id);
 		for (const [key, value] of Object.entries(req.body.changes)) {
@@ -235,7 +266,7 @@ app.patch('/domains/update/:id', async (req, res) => {
 	}
 });
 
-app.delete('/domains/delete/:id', async (req, res) => {
+app.delete('/domains/delete/:id', checkAuthenticated, async (req, res) => {
 	try {
 		await db.Domain.destroy({
 			where: {
@@ -248,7 +279,7 @@ app.delete('/domains/delete/:id', async (req, res) => {
 	}
 });
 
-app.post('/bugs/create', async (req, res) => {
+app.post('/bugs/create', checkAuthenticated, async (req, res) => {
 	try {
 		const newBug = await db.Bug.create(req.body);
 		res.send(newBug);
@@ -257,7 +288,7 @@ app.post('/bugs/create', async (req, res) => {
 	}
 });
 
-app.patch('/bugs/update/:id', async (req, res) => {
+app.patch('/bugs/update/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const bug = await db.Bug.findByPk(req.params.id);
 		for (const [key, value] of Object.entries(req.body.changes)) {
@@ -270,7 +301,7 @@ app.patch('/bugs/update/:id', async (req, res) => {
 	}
 });
 
-app.delete('/bugs/delete/:id', async (req, res) => {
+app.delete('/bugs/delete/:id', checkAuthenticated, async (req, res) => {
 	try {
 		await db.Bug.destroy({
 			where: {
@@ -283,7 +314,7 @@ app.delete('/bugs/delete/:id', async (req, res) => {
 	}
 });
 
-app.post('/comments/create', async (req, res) => {
+app.post('/comments/create', checkAuthenticated, async (req, res) => {
 	try {
 		const newComment = await db.Comment.create(req.body);
 		res.send(newComment);
@@ -292,7 +323,7 @@ app.post('/comments/create', async (req, res) => {
 	}
 });
 
-app.patch('/comments/update/:id', async (req, res) => {
+app.patch('/comments/update/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const comment = await db.Comment.findByPk(req.params.id);
 		for (const [key, value] of Object.entries(req.body.changes)) {
@@ -305,7 +336,7 @@ app.patch('/comments/update/:id', async (req, res) => {
 	}
 });
 
-app.delete('/comments/delete/:id', async (req, res) => {
+app.delete('/comments/delete/:id', checkAuthenticated, async (req, res) => {
 	try {
 		await db.Comment.destroy({
 			where: {
@@ -318,7 +349,7 @@ app.delete('/comments/delete/:id', async (req, res) => {
 	}
 });
 
-app.post('/initiatives/create', async (req, res) => {
+app.post('/initiatives/create', checkAuthenticated, async (req, res) => {
 	try {
 		const newInitiative = await db.Initiative.create(req.body);
 		res.send(newInitiative);
@@ -327,7 +358,7 @@ app.post('/initiatives/create', async (req, res) => {
 	}
 });
 
-app.patch('/initiatives/update/:id', async (req, res) => {
+app.patch('/initiatives/update/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const initiative = await db.Initiative.findByPk(req.params.id);
 		for (const [key, value] of Object.entries(req.body.changes)) {
@@ -340,7 +371,7 @@ app.patch('/initiatives/update/:id', async (req, res) => {
 	}
 });
 
-app.patch('/initiatives/addbugs/:id', async (req, res) => {
+app.patch('/initiatives/addbugs/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const initiative = await db.Initiative.findByPk(req.params.id);
 
@@ -354,7 +385,7 @@ app.patch('/initiatives/addbugs/:id', async (req, res) => {
 	}
 });
 
-app.patch('/initiatives/removebugs/:id', async (req, res) => {
+app.patch('/initiatives/removebugs/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const initiative = await db.Initiative.findByPk(req.params.id);
 
@@ -368,7 +399,7 @@ app.patch('/initiatives/removebugs/:id', async (req, res) => {
 	}
 });
 
-app.delete('/initiatives/delete/:id', async (req, res) => {
+app.delete('/initiatives/delete/:id', checkAuthenticated, async (req, res) => {
 	try {
 		await db.Initiative.destroy({
 			where: {
@@ -381,7 +412,7 @@ app.delete('/initiatives/delete/:id', async (req, res) => {
 	}
 });
 
-app.get('/organization/:id', async (req, res) => {
+app.get('/organization/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const targetOrganization = await db.Organization.findByPk(req.params.id);
 		const users = await targetOrganization.getUsers();
@@ -389,7 +420,7 @@ app.get('/organization/:id', async (req, res) => {
 		const domains = await projects[0].getDomains();
 		const initiatives = await domains[0].getInitiatives();
 
-		res.send({ targetOrganization, users, projects, domains, initiatives });
+		res.send({ user: req.user, targetOrganization, users, projects, domains, initiatives });
 	} catch (err) {
 		res.send(err);
 	}
