@@ -7,6 +7,7 @@ import initializePassport from './passport-config';
 import passport from 'passport';
 import flash from 'express-flash';
 import session from 'express-session';
+import { v4 as uuidv4 } from 'uuid';
 
 /*
 	-----------------INIT SERVER-----------------
@@ -132,14 +133,20 @@ app.post(
 	}
 );
 
-app.post('/organizations/create', checkAuthenticated, async (req, res) => {
-	try {
-		const newOrganization = await db.Organization.create(req.body);
-		res.send(newOrganization);
-	} catch (err) {
-		res.send(err);
+app.post(
+	'/organizations/create',
+	/*checkAuthenticated,*/ async (req, res) => {
+		try {
+			const invite_code = uuidv4();
+			const admin_passcode = Math.random().toString(36).substring(7);
+			const organizationData = { ...req.body, invite_code, admin_passcode };
+			const newOrganization = await db.Organization.create(organizationData);
+			res.send(newOrganization);
+		} catch (err) {
+			res.send(err);
+		}
 	}
-});
+);
 
 // updates expect a body of { changes : { "key": "value" } }
 
@@ -169,16 +176,19 @@ app.delete('/organizations/delete/:id', checkAuthenticated, async (req, res) => 
 	}
 });
 
-app.post('/users/create', checkAuthenticated, async (req, res) => {
-	console.log(req.body);
-	try {
-		req.body.password = await bcrypt.hash(req.body.password, 10);
-		const newUser = await db.User.create(req.body);
-		res.send(newUser);
-	} catch (err) {
-		res.send(` There was a problem creating this user: ${err.errors[0].message}`);
+app.post(
+	'/users/create',
+	/*checkAuthenticated,*/ async (req, res) => {
+		console.log(req.body);
+		try {
+			req.body.password = await bcrypt.hash(req.body.password, 10);
+			const newUser = await db.User.create(req.body);
+			res.send(newUser);
+		} catch (err) {
+			res.send(` There was a problem creating this user: ${err.errors[0].message}`);
+		}
 	}
-});
+);
 
 // TODO: sequelize will not allow you to modify the id (pk) of an instance, but it will allow you to change a foreign key.
 // either mitigate this by picking off specific values you want to be able to change, or find another way to make them

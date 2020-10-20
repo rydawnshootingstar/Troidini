@@ -20,6 +20,15 @@ const organization = (sequelize, DataTypes) => {
 		custom_theme: {
 			type: DataTypes.JSONB,
 		},
+		invite_code: {
+			type: DataTypes.STRING,
+			allowNull: false,
+			unique: true,
+		},
+		admin_passcode: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
 	});
 
 	Organization.associate = (models) => {
