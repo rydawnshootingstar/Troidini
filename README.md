@@ -29,3 +29,7 @@ ORGANIZTION level sockets: user status change, user online state change, project
 BUG level sockets: comments, status changes,
 
 For a larger scale project, I'd learn something like Redis pub/sub.
+
+### Image hosting on google drive
+
+No aws "free tier" this time. I'd just use an s3 bucket for a larger project.

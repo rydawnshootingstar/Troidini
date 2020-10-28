@@ -4,17 +4,29 @@ import socketIO from 'socket.io';
 import db from './models/index';
 import bcrypt from 'bcrypt';
 import initializePassport from './passport-config';
+import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import flash from 'express-flash';
 import session from 'express-session';
+import cors from 'cors';
+import SequelizeSession from 'express-session-sequelize';
+
 import { v4 as uuidv4 } from 'uuid';
+
+const SessionStore = SequelizeSession(session.Store);
+const sequelizeSessionStore = new SessionStore({
+	db: db.sequelize,
+});
 
 /*
 	-----------------INIT SERVER-----------------
 */
-const app = express();
-app.use(express.json());
 
+const corsOptions = { origin: 'http://localhost:8080', optionsSuccessStatus: 200, credentials: true };
+const app = express();
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(cookieParser(process.env.SECRET_KEY));
 const server = http.createServer(app);
 const io = socketIO(server);
 
@@ -24,6 +36,7 @@ app.use(
 		secret: process.env.SECRET_KEY,
 		resave: false,
 		saveUninitialized: false,
+		store: sequelizeSessionStore,
 	})
 );
 
@@ -80,6 +93,21 @@ const checkNotAuthenticated = (req, res, next) => {
 /*
 	-----------------ROUTES-----------------
 */
+
+app.get('/resume', checkAuthenticated, (req, res) => {
+	const {
+		id,
+		avatar_url,
+		username,
+		email,
+		active,
+		online_status,
+		type,
+		settings,
+		organization_id,
+	} = req.user.dataValues;
+	res.send({ id, avatar_url, username, email, active, online_status, type, settings, organization_id });
+});
 
 app.get('/', checkAuthenticated, (req, res) => {
 	// console.log(req.user);
@@ -138,6 +166,7 @@ app.post(
 	/*checkAuthenticated,*/ async (req, res) => {
 		try {
 			const invite_code = uuidv4();
+			// will probably produce a duplicate code after around 50,000 times, but who cares
 			const admin_passcode = Math.random().toString(36).substring(7);
 			const organizationData = { ...req.body, invite_code, admin_passcode };
 			const newOrganization = await db.Organization.create(organizationData);
@@ -176,16 +205,47 @@ app.delete('/organizations/delete/:id', checkAuthenticated, async (req, res) => 
 	}
 });
 
+app.post('/organizations/verify/invite', async (req, res) => {
+	try {
+		const targetOrganization = await db.Organization.findOne({
+			where: {
+				invite_code: req.body.organization_code,
+			},
+		});
+		res.send({ organization_id: targetOrganization.id });
+	} catch (err) {
+		res.status(404).send(apiResponse(false, 'Incorrect organization code', err.message));
+	}
+});
+
+app.post('/users/check', async (req, res) => {
+	try {
+		const user = await db.User.findOne({
+			where: {
+				email: req.body.email,
+			},
+		});
+
+		if (user) {
+			res.status(409).send(`Email is already taken`);
+		}
+		res.status(200).send(`Email is not taken`);
+	} catch (err) {
+		res.send(` There was a problem looking up this user: ${err.message}`);
+	}
+});
+
 app.post(
 	'/users/create',
 	/*checkAuthenticated,*/ async (req, res) => {
 		console.log(req.body);
 		try {
+			const unhashedPassword = req.body.password;
 			req.body.password = await bcrypt.hash(req.body.password, 10);
 			const newUser = await db.User.create(req.body);
-			res.send(newUser);
+			res.status(200).send({ email: req.body.email, password: unhashedPassword });
 		} catch (err) {
-			res.send(` There was a problem creating this user: ${err.errors[0].message}`);
+			res.status(409).send(` There was a problem creating this user: ${err.errors[0].message}`);
 		}
 	}
 );
@@ -422,15 +482,29 @@ app.delete('/initiatives/delete/:id', checkAuthenticated, async (req, res) => {
 	}
 });
 
+// app.get('/organization/:id', checkAuthenticated, async (req, res) => {
+// 	try {
+// 		const targetOrganization = await db.Organization.findByPk(req.params.id);
+// 		const users = await targetOrganization.getUsers();
+// 		const projects = await targetOrganization.getProjects();
+// 		const domains = await projects[0].getDomains();
+// 		const initiatives = await domains[0].getInitiatives();
+
+// 		res.send({ user: req.user, targetOrganization, users, projects, domains, initiatives });
+// 	} catch (err) {
+// 		res.send(err);
+// 	}
+// });
+
 app.get('/organization/:id', checkAuthenticated, async (req, res) => {
 	try {
 		const targetOrganization = await db.Organization.findByPk(req.params.id);
 		const users = await targetOrganization.getUsers();
-		const projects = await targetOrganization.getProjects();
-		const domains = await projects[0].getDomains();
-		const initiatives = await domains[0].getInitiatives();
-
-		res.send({ user: req.user, targetOrganization, users, projects, domains, initiatives });
+		// const projects = await targetOrganization.getProjects();
+		// const domains = await projects[0].getDomains();
+		// const initiatives = await domains[0].getInitiatives();
+		res.send({ users: users.dataValues, org: targetOrganization.dataValues });
+		//res.send({ user: req.user, targetOrganization, users, projects, domains, initiatives });
 	} catch (err) {
 		res.send(err);
 	}
