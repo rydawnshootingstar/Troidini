@@ -45,7 +45,7 @@ app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
-	res.header('Access-Control-Allow-Origin', 'http://localhost:8080'); // update to match the domain you will make the request from
+	res.header('Access-Control-Allow-Origin', process.env.CLIENT_URL); // update to match the domain you will make the request from
 	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 	next();
 });
@@ -88,6 +88,13 @@ const checkNotAuthenticated = (req, res, next) => {
 	}
 
 	res.redirect('/');
+};
+
+const checkUserInOrganization = (req, res, next) => {
+	if (!req.user.organization_id === req.params.id) {
+		res.send('Users cannot access other organizations');
+	}
+	return next();
 };
 
 /*
@@ -285,6 +292,16 @@ app.post('/projects/create', checkAuthenticated, async (req, res) => {
 		res.send(newProject);
 	} catch (err) {
 		res.send(err);
+	}
+});
+
+app.get('/projects', checkAuthenticated, async (req, res) => {
+	try {
+		const targetOrganization = await db.Organization.findByPk(req.user.organization_id);
+		const projects = await targetOrganization.getProjects();
+		res.send({ projects });
+	} catch (err) {
+		res.send(apiResponse(false, 'Could not get projects for this organization', err.message));
 	}
 });
 
