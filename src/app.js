@@ -79,7 +79,7 @@ const checkAuthenticated = (req, res, next) => {
 		return next();
 	}
 
-	res.send('not logged in');
+	res.status(401).send('not logged in');
 };
 
 const checkNotAuthenticated = (req, res, next) => {
@@ -288,10 +288,10 @@ app.delete('/users/delete/:id', checkAuthenticated, async (req, res) => {
 
 app.post('/projects/create', checkAuthenticated, async (req, res) => {
 	try {
-		const newProject = await db.Project.create(req.body);
+		const newProject = await db.Project.create({ ...req.body, organization_id: req.user.organization_id });
 		res.send(newProject);
 	} catch (err) {
-		res.send(err);
+		res.status(404).send(err);
 	}
 });
 
@@ -333,10 +333,10 @@ app.delete('/projects/delete/:id', checkAuthenticated, async (req, res) => {
 
 app.post('/domains/create', checkAuthenticated, async (req, res) => {
 	try {
-		const newDomain = await db.Domain.create(req.body);
+		const newDomain = await db.Domain.create({ ...req.body });
 		res.send(newDomain);
 	} catch (err) {
-		res.send(err);
+		res.status(404).send(err);
 	}
 });
 
