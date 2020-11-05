@@ -125,18 +125,21 @@ app.get('/login', (req, res) => {
 	res.send('you on da login screen');
 });
 
-app.post('/logout', async (req, res) => {
+app.get('/logout', async (req, res) => {
 	if (req.user) {
 		req.user.online_status = false;
 		await req.user.save();
-		req.logOut();
-		return res.redirect('/');
+		await req.logOut();
+		req.session.destroy(async () => {
+			res.clearCookie('connect.sid');
+			res.status(200).send('logged out');
+		});
 
 		// TODO: socket.io event to social window component >
 		// social window component calls a redux action >
 		// redux state causes rerender
 	} else {
-		return res.send('not logged in');
+		return res.status(401).send('not logged in');
 	}
 });
 
@@ -297,6 +300,7 @@ app.post('/projects/create', checkAuthenticated, async (req, res) => {
 
 app.get('/projects', checkAuthenticated, async (req, res) => {
 	try {
+		console.log(req.user);
 		const targetOrganization = await db.Organization.findByPk(req.user.organization_id);
 		const projects = await targetOrganization.getProjects();
 		res.send({ projects });
