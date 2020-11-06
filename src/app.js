@@ -440,6 +440,31 @@ app.delete('/comments/delete/:id', checkAuthenticated, async (req, res) => {
 	}
 });
 
+// project id
+app.get('/initiatives/:id', checkAuthenticated, async (req, res) => {
+	try {
+		const project = await db.Project.findByPk(req.params.id);
+		if (project.organization_id === req.user.organization_id) {
+			const domains = await project.getDomains();
+			let allInitiatives = [];
+			await Promise.all(
+				domains.map(async (domain) => {
+					const initiatives = await domain.getInitiatives();
+					initiatives.forEach(({ dataValues }) => {
+						allInitiatives.push(dataValues);
+					});
+				})
+			);
+			console.log('all', allInitiatives);
+			res.send({ initiatives: allInitiatives });
+		} else {
+			res.status(401).send('You are not authorized to access this project');
+		}
+	} catch (err) {
+		res.send(err);
+	}
+});
+
 app.post('/initiatives/create', checkAuthenticated, async (req, res) => {
 	try {
 		const newInitiative = await db.Initiative.create(req.body);
