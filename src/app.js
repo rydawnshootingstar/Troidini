@@ -117,7 +117,6 @@ app.get('/resume', checkAuthenticated, (req, res) => {
 });
 
 app.get('/', checkAuthenticated, (req, res) => {
-	// console.log(req.user);
 	res.send('you did it!');
 });
 
@@ -228,6 +227,22 @@ app.post('/organizations/verify/invite', async (req, res) => {
 	}
 });
 
+app.get('/users/online', checkAuthenticated, async (req, res) => {
+	try {
+		const onlineUsers = await db.User.findAll({
+			attributes: ['id', 'username', 'email', 'online_status', 'avatar_url', 'type'],
+			where: {
+				online_status: true,
+				organization_id: req.user.organization_id,
+			},
+		});
+
+		res.status(200).send({ onlineUsers });
+	} catch (err) {
+		res.send(` There was a problem looking up this user: ${err.message}`);
+	}
+});
+
 app.post('/users/check', async (req, res) => {
 	try {
 		const user = await db.User.findOne({
@@ -245,20 +260,16 @@ app.post('/users/check', async (req, res) => {
 	}
 });
 
-app.post(
-	'/users/create',
-	/*checkAuthenticated,*/ async (req, res) => {
-		console.log(req.body);
-		try {
-			const unhashedPassword = req.body.password;
-			req.body.password = await bcrypt.hash(req.body.password, 10);
-			const newUser = await db.User.create(req.body);
-			res.status(200).send({ email: req.body.email, password: unhashedPassword });
-		} catch (err) {
-			res.status(409).send(` There was a problem creating this user: ${err.errors[0].message}`);
-		}
+app.post('/users/create', async (req, res) => {
+	try {
+		const unhashedPassword = req.body.password;
+		req.body.password = await bcrypt.hash(req.body.password, 10);
+		const newUser = await db.User.create(req.body);
+		res.status(200).send({ email: req.body.email, password: unhashedPassword });
+	} catch (err) {
+		res.status(409).send(` There was a problem creating this user: ${err.errors[0].message}`);
 	}
-);
+});
 
 // TODO: sequelize will not allow you to modify the id (pk) of an instance, but it will allow you to change a foreign key.
 // either mitigate this by picking off specific values you want to be able to change, or find another way to make them
@@ -300,7 +311,6 @@ app.post('/projects/create', checkAuthenticated, async (req, res) => {
 
 app.get('/projects', checkAuthenticated, async (req, res) => {
 	try {
-		console.log(req.user);
 		const targetOrganization = await db.Organization.findByPk(req.user.organization_id);
 		const projects = await targetOrganization.getProjects();
 		res.send({ projects });
@@ -332,6 +342,25 @@ app.delete('/projects/delete/:id', checkAuthenticated, async (req, res) => {
 		res.send(apiResponse(true, 'Project successfully deleted'));
 	} catch (err) {
 		res.send(apiResponse(false, 'Could not delete this project', err.message));
+	}
+});
+
+// project id
+app.get('/domains/:id', checkAuthenticated, async (req, res) => {
+	try {
+		const project = await db.Project.findByPk(req.params.id);
+		if (project.organization_id === req.user.organization_id) {
+			const domains = await project.getDomains();
+			const allDomains = [];
+			domains.forEach(({ dataValues }) => {
+				allDomains.push(dataValues);
+			});
+			res.send({ domains: allDomains });
+		} else {
+			res.status(401).send('You are not authorized to access this project');
+		}
+	} catch (err) {
+		res.send(err);
 	}
 });
 
@@ -455,7 +484,6 @@ app.get('/initiatives/:id', checkAuthenticated, async (req, res) => {
 					});
 				})
 			);
-			console.log('all', allInitiatives);
 			res.send({ initiatives: allInitiatives });
 		} else {
 			res.status(401).send('You are not authorized to access this project');
