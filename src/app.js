@@ -239,7 +239,7 @@ app.get('/users/online', checkAuthenticated, async (req, res) => {
 
 		res.status(200).send({ onlineUsers });
 	} catch (err) {
-		res.send(` There was a problem looking up this user: ${err.message}`);
+		res.send(` There was a problem looking up online users: ${err.message}`);
 	}
 });
 
